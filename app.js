@@ -32,14 +32,32 @@ const io = require("socket.io")(server, {
 app.get('/', (req, res) => {
 	res.send('Running');
 });
+const emailToSocketMapping = new Map();
+let activeUsers =  new Array();
+
 io.on('connection', socket => {
     socket.emit('me',socket.id);
-    socket.on('disconnect', () => {
-    socket.broadcast.emit("callended");
-}); 
+    socket.on('user-join', (data)=>{
+        let {emailId} = data;
+        emailToSocketMapping.set(emailId,socket.id)
+        if(!activeUsers.some((user) => user.userId === emailId)){
+            activeUsers.push({
+                userId:emailId,
+                socketId:socket.id
+
+            })
+            
+        }
+        socket.emit('active-users',activeUsers );
+        socket.broadcast.emit('active-users',activeUsers );
+        
+    })
+ 
+
 
 socket.on("callUser", ({ userToCall, signalData, from, name }) => {
-    io.to(userToCall).emit("callUser", { signal: signalData, from, name });
+    const socketId = emailToSocketMapping.get(userToCall);
+    io.to(socketId).emit("callUser", { signal: signalData, from, name });
 });
 
 socket.on("answerCall", (data) => {
@@ -48,7 +66,13 @@ socket.on("answerCall", (data) => {
 socket.on("rejectCall", (data) => {
     io.to(data.to).emit('endedRes',"call is rejected")
 });
-
+socket.on('disconnect', () => {
+    activeUsers = activeUsers.filter((user)=> user.socketId !== socket.id )
+    socket.broadcast.emit('active-users',activeUsers );
+    
+socket.emit("callended");
+;
+}); 
 })
 
 server.listen(PORT, console.log("Server is running 5000"))
