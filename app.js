@@ -21,7 +21,9 @@ mongoose.connect(process.env.MONGO_URL,{
 
 app.use(userRouter)
 
-
+setInterval(function() {
+    http.get("https://vediocallserver.onrender.com");
+}, 840000);
 const PORT = process.env.PORT || 5000;
 const io = require("socket.io")(server, {
 	cors: {
