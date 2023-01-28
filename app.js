@@ -72,7 +72,7 @@ socket.on('disconnect', () => {
     activeUsers = activeUsers.filter((user)=> user.socketId !== socket.id )
     socket.broadcast.emit('active-users',activeUsers );
     
-socket.emit("callended");
+socket.broadcast.emit("callended");
 ;
 }); 
 })
